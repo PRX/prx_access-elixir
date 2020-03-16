@@ -21,7 +21,7 @@ defmodule PrxClient.RemoteTest do
   end
 
   test "gets resources" do
-    build(:mock_root, json: %{"foo" => "bar"})
+    build(:mock_http, body: "{\"foo\":\"bar\"}")
     assert {:ok, res} = Remote.get("http://some.where/api/v1")
     assert %Resource{} = res
     assert res._status == 200
@@ -30,7 +30,7 @@ defmodule PrxClient.RemoteTest do
   end
 
   test "gets errors" do
-    build(:mock_root, body: "this-is-not-json")
+    build(:mock_http, body: "this-is-not-json")
     assert {:error, err} = Remote.get("http://some.where/api/v1")
     assert %Error{} = err
     assert err.message == "JSON decode error: this-is-not-json"

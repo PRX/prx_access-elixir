@@ -10,6 +10,10 @@ defmodule PrxClient.Error do
 
   def build(status, url, body), do: build_json(status, url, body)
 
+  def for_resource(%PrxClient.Resource{_status: status, _url: url}, "" <> msg) do
+    {:error, %PrxClient.Error{status: status, url: url, message: msg}}
+  end
+
   defp build_json(status, url, json) do
     err = %PrxClient.Error{
       status: status,

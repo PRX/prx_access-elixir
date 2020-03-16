@@ -1,6 +1,8 @@
 defmodule PrxClient.ErrorTest do
   use ExUnit.Case, async: true
 
+  import PrxClient.Factory
+
   alias PrxClient.Error
 
   test "has fields" do
@@ -36,5 +38,13 @@ defmodule PrxClient.ErrorTest do
     assert err.url == "http://some.where"
     assert err.message == "Got 404 for http://some.where"
     assert err.json == %{"my" => "json"}
+  end
+
+  test "returns an error for a resource" do
+    assert {:error, err} = Error.for_resource(build(:resource), "some err message")
+    assert %Error{} = err
+    assert err.status == 200
+    assert err.url == "https://host.prx.org/api/v1/thing/1234"
+    assert err.message == "some err message"
   end
 end

@@ -1,34 +1,49 @@
 defmodule PrxClient do
   @moduledoc """
-  Documentation for PrxClient.
+  Client library for interacting with PRX APIs
   """
 
+  alias PrxClient.Remote
   alias PrxClient.Resource
   alias PrxClient.Resource.Link
+  alias PrxClient.Error
 
   @doc """
   Get the root resource for a hostname
   """
   def root("" <> host) do
-    get(%{url: "https://#{host}/api/v1"})
+    Remote.get("https://#{host}/api/v1")
   end
 
-  def links(%Resource{_links: links}, "" <> rel), do: links[rel]
-  def links({:ok, res}, rel), do: links(res, rel)
-  def links(err, _rel), do: err
-
-  def link(%Resource{_url: url} = res, "" <> rel) do
-    case links(res, rel) do
-      [first_link | _rest] -> {:ok, first_link}
-      %Link{} = single_link -> {:ok, single_link}
-      _ -> {:error, "Unknown rel #{rel} on #{url}"}
+  def links(%Resource{_links: links} = res, "" <> rel) do
+    case Map.get(links, rel) do
+      nil -> Error.for_resource(res, "rel #{rel} not found")
+      links -> {:ok, links}
     end
   end
 
-  def link({:ok, res}, rel), do: link(res, rel)
-  def link(err, _rel), do: err
+  def links({:ok, res}, rel), do: links(res, rel)
+  def links(err, _rel), do: err
 
-  def rels(%Resource{_links: links}), do: Map.keys(links)
+  def link(res, rel) do
+    case links(res, rel) do
+      {:ok, [first_link | _rest]} -> {:ok, first_link}
+      {:ok, single_link} -> {:ok, single_link}
+      err -> err
+    end
+  end
+
+  def link?(res, rel) do
+    case links(res, rel) do
+      {:ok, _} -> true
+      _err -> false
+    end
+  end
+
+  def rels(%Resource{_links: links, _embedded: embedded}) do
+    {:ok, Enum.uniq(Map.keys(links) ++ Map.keys(embedded))}
+  end
+
   def rels({:ok, res}), do: rels(res)
   def rels(err), do: err
 
@@ -36,59 +51,38 @@ defmodule PrxClient do
   def follow({:ok, res}, rel, params), do: follow(res, rel, params)
   def follow({:error, err}, _rel, _params), do: {:error, err}
 
-  def follow(%Resource{} = res, "" <> rel, params) do
-    case link(res, rel) do
-      {:ok, link} -> follow(res, link, params)
-      err -> err
+  def follow(%Resource{_embedded: embeds} = res, "" <> rel, params) do
+    if Map.has_key?(embeds, rel) do
+      {:ok, Map.get(embeds, rel)}
+    else
+      case link(res, rel) do
+        {:ok, link} -> follow(res, link, params)
+        err -> err
+      end
     end
   end
 
-  def follow(%Resource{_url: prev_url} = res, %Link{href: href}, params) do
-    url = URI.merge(prev_url, UriTemplate.expand(href, params))
-    get(%{url: to_string(url)})
+  def follow(%Resource{_url: prev_url}, %Link{href: href}, params) do
+    expanded = UriTemplate.expand(href, params)
+    merged = URI.merge(prev_url, expanded)
+
+    # TODO: would be nice if UriTemplate removed unused query params
+    remove_blank_query_params(merged) |> Remote.get()
   end
 
-  def get(%{url: url}) do
-    headers = [{"Accept", "application/hal+json"}]
+  defp remove_blank_query_params(%URI{query: nil} = uri), do: to_string(uri)
 
-    case HTTPoison.get(url, headers) do
-      {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        case Poison.decode(body) do
-          {:ok, json} -> to_resource(json, url, status)
-          _not_json -> to_error(body, url, status)
-        end
+  defp remove_blank_query_params(%URI{query: query} = uri) do
+    filtered =
+      query
+      |> URI.decode_query()
+      |> Enum.reject(fn {_key, val} -> val == nil || val == "" end)
+      |> Map.new()
+      |> URI.encode_query()
 
-      {:error, %HTTPoison.Error{reason: reason}} ->
-        to_error(reason, url, nil)
+    case filtered do
+      "" -> Map.put(uri, :query, nil) |> to_string()
+      _ -> Map.put(uri, :query, filtered) |> to_string()
     end
-  end
-
-  defp to_resource(json, url, 200) do
-    res =
-      PrxClient.Resource.from_json(json)
-      |> Map.put(:_url, url)
-      |> Map.put(:_status, 200)
-
-    {:ok, res}
-  end
-
-  defp to_resource(json, url, not_ok_status) do
-    json
-    |> Map.put(:message, "Non-ok status #{not_ok_status} for #{url}")
-    |> to_error(url, not_ok_status)
-  end
-
-  defp to_error("" <> msg, url, status) do
-    to_error(%{message: msg}, url, status)
-  end
-
-  defp to_error(json, url, status) do
-    err =
-      %PrxClient.Error{}
-      |> struct(json)
-      |> Map.put(:url, url)
-      |> Map.put(:status, status)
-
-    {:error, err}
   end
 end
