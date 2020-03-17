@@ -20,6 +20,16 @@ defmodule PrxClient.RemoteTest do
     assert {:ok, _res} = Remote.get("http://some.where/api/v1")
   end
 
+  test "sets authorization headers" do
+    expect(Dovetail.MockHTTPoison, :get, fn url, hdrs ->
+      assert url == "http://some.where/api/v1"
+      assert hdrs == [{"Accept", "application/hal+json"}, {"Authorization", "Bearer my-token"}]
+      {:ok, %HTTPoison.Response{status_code: 200, body: "{}"}}
+    end)
+
+    assert {:ok, _res} = Remote.get("http://some.where/api/v1", "my-token")
+  end
+
   test "gets resources" do
     build(:mock_http, body: "{\"foo\":\"bar\"}")
     assert {:ok, res} = Remote.get("http://some.where/api/v1")
