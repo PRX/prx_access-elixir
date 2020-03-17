@@ -1,47 +1,41 @@
 defmodule PrxClient.RemoteTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
 
-  import Mox
+  import FakeServer
   import PrxClient.Factory
 
   alias PrxClient.Remote
   alias PrxClient.Resource
   alias PrxClient.Error
 
-  setup :verify_on_exit!
+  test_with_server "sets http headers" do
+    route("/api/v1", FakeServer.Response.ok("{}"))
 
-  test "sets http headers" do
-    expect(PrxClient.MockHTTPoison, :get, fn url, hdrs ->
-      assert url == "http://some.where/api/v1"
-      assert hdrs == [{"Accept", "application/hal+json"}]
-      {:ok, %HTTPoison.Response{status_code: 200, body: "{}"}}
-    end)
-
-    assert {:ok, _res} = Remote.get("http://some.where/api/v1")
+    assert {:ok, _res} = Remote.get("http://#{FakeServer.address()}/api/v1")
+    assert FakeServer.hits() == 1
+    assert request_received("/api/v1", headers: %{"accept" => "application/hal+json"})
   end
 
-  test "sets authorization headers" do
-    expect(PrxClient.MockHTTPoison, :get, fn url, hdrs ->
-      assert url == "http://some.where/api/v1"
-      assert hdrs == [{"Accept", "application/hal+json"}, {"Authorization", "Bearer my-token"}]
-      {:ok, %HTTPoison.Response{status_code: 200, body: "{}"}}
-    end)
+  test_with_server "sets authorization headers" do
+    route("/api/v1", FakeServer.Response.ok("{}"))
 
-    assert {:ok, _res} = Remote.get("http://some.where/api/v1", "my-token")
+    assert {:ok, _res} = Remote.get("http://#{FakeServer.address()}/api/v1", "my-token")
+    assert FakeServer.hits() == 1
+    assert request_received("/api/v1", headers: %{"authorization" => "Bearer my-token"})
   end
 
-  test "gets resources" do
-    build(:mock_http, body: "{\"foo\":\"bar\"}")
-    assert {:ok, res} = Remote.get("http://some.where/api/v1")
+  test_with_server "gets resources" do
+    route("/api/v1/blah", build(:fake_response, body: "{\"foo\":\"bar\"}"))
+    assert {:ok, res} = Remote.get("http://#{FakeServer.address()}/api/v1/blah")
     assert %Resource{} = res
     assert res._status == 200
-    assert res._url == "http://some.where/api/v1"
+    assert res._url == "http://#{FakeServer.address()}/api/v1/blah"
     assert res.attributes == %{"foo" => "bar"}
   end
 
-  test "gets errors" do
-    build(:mock_http, body: "this-is-not-json")
-    assert {:error, err} = Remote.get("http://some.where/api/v1")
+  test_with_server "gets errors" do
+    route("/api/v1/", build(:fake_response, body: "this-is-not-json"))
+    assert {:error, err} = Remote.get("http://#{FakeServer.address()}/api/v1/")
     assert %Error{} = err
     assert err.message == "JSON decode error: this-is-not-json"
   end

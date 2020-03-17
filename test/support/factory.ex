@@ -1,8 +1,6 @@
 defmodule PrxClient.Factory do
   use ExMachina
 
-  import Mox
-
   alias PrxClient.Resource
   alias PrxClient.Resource.Link
 
@@ -36,16 +34,10 @@ defmodule PrxClient.Factory do
     }
   end
 
-  def http_response_factory(attrs) do
-    {:ok, json} = build(:resource_json, Map.get(attrs, :json, %{})) |> Poison.encode()
-    resp = %HTTPoison.Response{status_code: 200, body: json}
-    merge_attributes(resp, Map.delete(attrs, :json))
-  end
-
-  def mock_http_factory(attrs) do
-    resp = build(:http_response, attrs)
-    expect(PrxClient.MockHTTPoison, :get, fn _url, _hdrs -> {:ok, resp} end)
-    resp
+  def fake_response_factory(attrs) do
+    body = Map.get(attrs, :body, build(:resource_json, attrs))
+    resp = FakeServer.Response.ok!(body)
+    merge_attributes(resp, Map.delete(attrs, :body))
   end
 
   def resource_factory do

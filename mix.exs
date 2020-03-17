@@ -21,9 +21,9 @@ defmodule PrxClient.MixProject do
   defp deps do
     [
       {:ex_machina, "~> 2.3", only: :test},
+      {:fake_server, "~> 2.1", only: :test},
       {:httpoison, "~> 1.6"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
-      {:mox, "~> 0.5", only: :test},
       {:oauth2, "~> 2.0"},
       {:poison, "~> 3.1"},
       {:uri_template, "~> 1.0"}
