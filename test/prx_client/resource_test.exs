@@ -8,6 +8,7 @@ defmodule PrxClient.ResourceTest do
     res = %Resource{}
     assert res._status == nil
     assert res._url == nil
+    assert res._token == nil
     assert res.attributes == nil
     assert res._links == nil
     assert res._embedded == nil
@@ -21,6 +22,12 @@ defmodule PrxClient.ResourceTest do
     assert res.attributes == %{"foo" => "bar"}
     assert res._links == %{}
     assert res._embedded == %{}
+  end
+
+  test "builds with a token" do
+    {:ok, res} = Resource.build(200, nil, "my-token", "{}")
+    assert %Resource{} = res
+    assert res._token == "my-token"
   end
 
   test "handles json decode errors" do
@@ -83,7 +90,7 @@ defmodule PrxClient.ResourceTest do
         }
       })
 
-    {:ok, res} = Resource.build(200, "http://some.where", json)
+    {:ok, res} = Resource.build(200, "http://some.where", "my-token", json)
     assert %Resource{} = res
 
     assert res._embedded == %{
@@ -91,6 +98,7 @@ defmodule PrxClient.ResourceTest do
                %Resource{
                  _status: 200,
                  _url: "http://some.where",
+                 _token: "my-token",
                  attributes: %{"id" => "one"},
                  _embedded: %{},
                  _links: %{}
@@ -98,6 +106,7 @@ defmodule PrxClient.ResourceTest do
                %Resource{
                  _status: 200,
                  _url: "http://some.where",
+                 _token: "my-token",
                  attributes: %{"id" => "two"},
                  _embedded: %{},
                  _links: %{
