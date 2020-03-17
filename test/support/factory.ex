@@ -44,7 +44,7 @@ defmodule PrxClient.Factory do
 
   def mock_http_factory(attrs) do
     resp = build(:http_response, attrs)
-    expect(Dovetail.MockHTTPoison, :get, fn _url, _hdrs -> {:ok, resp} end)
+    expect(PrxClient.MockHTTPoison, :get, fn _url, _hdrs -> {:ok, resp} end)
     resp
   end
 

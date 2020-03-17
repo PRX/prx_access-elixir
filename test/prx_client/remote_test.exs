@@ -11,7 +11,7 @@ defmodule PrxClient.RemoteTest do
   setup :verify_on_exit!
 
   test "sets http headers" do
-    expect(Dovetail.MockHTTPoison, :get, fn url, hdrs ->
+    expect(PrxClient.MockHTTPoison, :get, fn url, hdrs ->
       assert url == "http://some.where/api/v1"
       assert hdrs == [{"Accept", "application/hal+json"}]
       {:ok, %HTTPoison.Response{status_code: 200, body: "{}"}}
@@ -21,7 +21,7 @@ defmodule PrxClient.RemoteTest do
   end
 
   test "sets authorization headers" do
-    expect(Dovetail.MockHTTPoison, :get, fn url, hdrs ->
+    expect(PrxClient.MockHTTPoison, :get, fn url, hdrs ->
       assert url == "http://some.where/api/v1"
       assert hdrs == [{"Accept", "application/hal+json"}, {"Authorization", "Bearer my-token"}]
       {:ok, %HTTPoison.Response{status_code: 200, body: "{}"}}

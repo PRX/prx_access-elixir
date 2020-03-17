@@ -102,7 +102,7 @@ defmodule PrxClientTest do
 
   describe "follow" do
     test "follows linked resources" do
-      expect(Dovetail.MockHTTPoison, :get, fn url, _hdrs ->
+      expect(PrxClient.MockHTTPoison, :get, fn url, _hdrs ->
         assert url == "https://host.prx.org/api/v1/somethings?page=4"
         {:ok, build(:http_response)}
       end)
@@ -113,7 +113,7 @@ defmodule PrxClientTest do
     end
 
     test "removes unused query params" do
-      expect(Dovetail.MockHTTPoison, :get, fn url, _hdrs ->
+      expect(PrxClient.MockHTTPoison, :get, fn url, _hdrs ->
         assert url == "https://host.prx.org/api/v1/somethings"
         {:ok, build(:http_response)}
       end)
@@ -133,7 +133,7 @@ defmodule PrxClientTest do
     test "handles tuples" do
       res = build(:resource)
 
-      expect(Dovetail.MockHTTPoison, :get, fn url, _hdrs ->
+      expect(PrxClient.MockHTTPoison, :get, fn url, _hdrs ->
         assert url == "https://host.prx.org/api/v1/somethings?page=1&per=2"
         {:ok, build(:http_response)}
       end)
