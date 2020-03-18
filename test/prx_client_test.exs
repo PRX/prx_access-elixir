@@ -1,28 +1,26 @@
 defmodule PrxClientTest do
   use ExUnit.Case, async: true
 
-  import Mox
+  import FakeServer
   import PrxClient.Factory
 
   alias PrxClient.Resource
   alias PrxClient.Resource.Link
   alias PrxClient.Error
 
-  setup :verify_on_exit!
-
   describe "root" do
-    test "returns the root resource" do
-      build(:mock_http, json: %{"foo" => "bar"})
-      assert {:ok, root} = PrxClient.root("host.prx.org")
+    test_with_server "returns the root resource" do
+      route("/api/v1/", build(:fake_response))
+      assert {:ok, root} = PrxClient.root(FakeServer.address())
       assert %Resource{} = root
-      assert root.attributes["foo"] == "bar"
+      assert root.attributes["title"] == "resource json"
     end
 
-    test "returns json http errors" do
-      build(:mock_http, status_code: 500)
-      assert {:error, err} = PrxClient.root("host.prx.org")
+    test_with_server "returns json http errors" do
+      route("/api/v1/", FakeServer.Response.internal_server_error("{}"))
+      assert {:error, err} = PrxClient.root(FakeServer.address())
       assert %Error{} = err
-      assert err.message == "Got 500 for https://host.prx.org/api/v1"
+      assert err.message == "Got 500 for http://#{FakeServer.address()}/api/v1"
     end
   end
 
@@ -101,26 +99,36 @@ defmodule PrxClientTest do
   end
 
   describe "follow" do
-    test "follows linked resources" do
-      expect(PrxClient.MockHTTPoison, :get, fn url, _hdrs ->
-        assert url == "https://host.prx.org/api/v1/somethings?page=4"
-        {:ok, build(:http_response)}
+    test_with_server "follows linked resources" do
+      route("/api/v1", build(:fake_response))
+
+      route("/api/v1/somethings", fn %{query: %{"page" => "4"}} ->
+        build(:fake_response)
       end)
 
-      assert {:ok, res} = PrxClient.follow(build(:resource), "prx:somethings", page: 4)
+      assert {:ok, root} = PrxClient.root(FakeServer.address())
+      assert {:ok, res} = PrxClient.follow(root, "prx:somethings", page: 4)
       assert %Resource{} = res
       assert res.attributes["id"] == 1234
+
+      assert request_received("/api/v1")
+      assert request_received("/api/v1/somethings")
     end
 
-    test "removes unused query params" do
-      expect(PrxClient.MockHTTPoison, :get, fn url, _hdrs ->
-        assert url == "https://host.prx.org/api/v1/somethings"
-        {:ok, build(:http_response)}
+    test_with_server "removes unused query params" do
+      route("/api/v1", build(:fake_response))
+
+      route("/api/v1/somethings", fn %{query: %{}} ->
+        build(:fake_response)
       end)
 
-      assert {:ok, res} = PrxClient.follow(build(:resource), "prx:somethings")
+      assert {:ok, root} = PrxClient.root(FakeServer.address())
+      assert {:ok, res} = PrxClient.follow(root, "prx:somethings")
       assert %Resource{} = res
       assert res.attributes["id"] == 1234
+
+      assert request_received("/api/v1")
+      assert request_received("/api/v1/somethings")
     end
 
     test "follows embedded resources" do
@@ -130,17 +138,20 @@ defmodule PrxClientTest do
       assert Enum.at(items, 1) == %Resource{attributes: %{"id" => "two"}}
     end
 
-    test "handles tuples" do
-      res = build(:resource)
+    test_with_server "handles tuples" do
+      route("/api/v1", build(:fake_response))
 
-      expect(PrxClient.MockHTTPoison, :get, fn url, _hdrs ->
-        assert url == "https://host.prx.org/api/v1/somethings?page=1&per=2"
-        {:ok, build(:http_response)}
+      route("/api/v1/somethings", fn %{query: %{}} ->
+        build(:fake_response)
       end)
 
-      assert {:ok, res} = PrxClient.follow(res, "prx:somethings", page: 1, per: 2)
+      assert okay_root = PrxClient.root(FakeServer.address())
+      assert {:ok, res} = PrxClient.follow(okay_root, "prx:somethings", page: 1, per: 2)
       assert %Resource{} = res
       assert res.attributes["id"] == 1234
+
+      assert request_received("/api/v1")
+      assert request_received("/api/v1/somethings")
 
       assert {:error, "blah"} = PrxClient.follow({:error, "blah"}, "prx:somethings")
     end

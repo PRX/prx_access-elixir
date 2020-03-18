@@ -12,7 +12,14 @@ defmodule PrxClient.Remote do
   def host_to_api(host), do: "#{host_to_url(host)}/api/v1"
 
   def host_to_url("http" <> host), do: host
-  def host_to_url(host), do: "https://#{host}"
+
+  def host_to_url(host) do
+    if host =~ ~r/localhost|127\.0\.0\.1/ do
+      "http://#{host}"
+    else
+      "https://#{host}"
+    end
+  end
 
   defp headers(nil) do
     [{"Accept", "application/hal+json"}]
