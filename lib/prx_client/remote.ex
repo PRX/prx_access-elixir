@@ -21,11 +21,15 @@ defmodule PrxClient.Remote do
     end
   end
 
+  def user_agent do
+    "PrxClientElixir/#{Mix.Project.config()[:version]}"
+  end
+
   defp headers(nil) do
-    [{"Accept", "application/hal+json"}]
+    [{"Accept", "application/hal+json"}, {"User-Agent", user_agent()}]
   end
 
   defp headers(token) do
-    [{"Accept", "application/hal+json"}, {"Authorization", "Bearer #{token}"}]
+    headers(nil) ++ [{"Authorization", "Bearer #{token}"}]
   end
 end
