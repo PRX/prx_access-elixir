@@ -2,6 +2,9 @@ defmodule PrxClient.Auth do
   @default_id_host "id.prx.org"
   @token_url "/token"
 
+  # use token POST body vs auth header for sending client id/secret
+  @scheme "request_body"
+
   alias PrxClient.Error
 
   # you already have a token (TODO: refreshing)
@@ -40,12 +43,18 @@ defmodule PrxClient.Auth do
   end
 
   defp client_token(%OAuth2.Client{} = client, account) do
-    case OAuth2.Client.get_token(client, account: account) do
+    params = [account: account, auth_scheme: @scheme]
+    headers = [{"User-Agent", PrxClient.Remote.user_agent()}]
+
+    case OAuth2.Client.get_token(client, params, headers) do
       {:ok, %OAuth2.Client{token: %{access_token: token}}} ->
         {:ok, token}
 
       {:error, %OAuth2.Response{status_code: status, body: %{"Invalid credentials" => _}}} ->
         Error.build(status, "#{client.site}#{client.token_url}", "Invalid credentials")
+
+      {:error, %OAuth2.Response{status_code: status, body: "" <> body}} ->
+        Error.build(status, "#{client.site}#{client.token_url}", body)
 
       {:error, %OAuth2.Response{status_code: status, body: body}} ->
         Error.build(status, "#{client.site}#{client.token_url}", inspect(body))
@@ -55,5 +64,5 @@ defmodule PrxClient.Auth do
     end
   end
 
-  defp get_token(err, _account), do: err
+  defp client_token(err, _account), do: err
 end

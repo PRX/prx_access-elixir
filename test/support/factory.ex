@@ -3,6 +3,7 @@ defmodule PrxClient.Factory do
 
   alias PrxClient.Resource
   alias PrxClient.Resource.Link
+  alias FakeServer.Response
 
   def resource_json_factory do
     %{
@@ -36,7 +37,7 @@ defmodule PrxClient.Factory do
 
   def fake_response_factory(attrs) do
     body = Map.get(attrs, :body, build(:resource_json, attrs))
-    resp = FakeServer.Response.ok!(body)
+    resp = Response.ok!(body)
     merge_attributes(resp, Map.delete(attrs, :body))
   end
 
@@ -58,5 +59,37 @@ defmodule PrxClient.Factory do
       _url: "https://host.prx.org/api/v1/thing/1234",
       _status: 200
     }
+  end
+
+  def token_response_factory(%{id: id, secret: secret, account: account} = attrs) do
+    expected_form =
+      %{
+        "grant_type" => "client_credentials",
+        "client_id" => id,
+        "client_secret" => secret,
+        "account" => account
+      }
+      |> URI.encode_query()
+
+    plain_headers = %{"content-type" => "text/plain"}
+
+    fn %{method: method, headers: %{"content-type" => type}, body: body} ->
+      cond do
+        method != "POST" ->
+          Response.internal_server_error("bad method: #{method}", plain_headers)
+
+        type != "application/x-www-form-urlencoded" ->
+          Response.internal_server_error("bad content type: #{type}", plain_headers)
+
+        body != expected_form ->
+          Response.internal_server_error("bad form: #{body}", plain_headers)
+
+        attrs[:unauthorized] ->
+          Response.unauthorized("Invalid credentials", plain_headers)
+
+        true ->
+          Response.ok(%{access_token: "your-token-#{account}", token_type: "bearer"})
+      end
+    end
   end
 end
