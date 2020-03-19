@@ -1,9 +1,9 @@
-defmodule PrxClient.MixProject do
+defmodule PrxAccess.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :prx_client,
+      app: :prx_access,
       version: "0.1.0",
       elixir: "~> 1.9",
       start_permanent: Mix.env() == :prod,

@@ -1,8 +1,8 @@
-defmodule PrxClient.ResourceTest do
+defmodule PrxAccess.ResourceTest do
   use ExUnit.Case, async: true
 
-  alias PrxClient.Resource
-  alias PrxClient.Error
+  alias PrxAccess.Resource
+  alias PrxAccess.Error
 
   test "has fields" do
     res = %Resource{}

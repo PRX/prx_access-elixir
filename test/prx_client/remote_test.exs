@@ -1,12 +1,12 @@
-defmodule PrxClient.RemoteTest do
+defmodule PrxAccess.RemoteTest do
   use ExUnit.Case
 
   import FakeServer
-  import PrxClient.Factory
+  import PrxAccess.Factory
 
-  alias PrxClient.Remote
-  alias PrxClient.Resource
-  alias PrxClient.Error
+  alias PrxAccess.Remote
+  alias PrxAccess.Resource
+  alias PrxAccess.Error
 
   test_with_server "sets http headers" do
     route("/api/v1", FakeServer.Response.ok("{}"))

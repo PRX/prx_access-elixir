@@ -1,8 +1,8 @@
-defmodule PrxClient.Factory do
+defmodule PrxAccess.Factory do
   use ExMachina
 
-  alias PrxClient.Resource
-  alias PrxClient.Resource.Link
+  alias PrxAccess.Resource
+  alias PrxAccess.Resource.Link
   alias FakeServer.Response
 
   def resource_json_factory do

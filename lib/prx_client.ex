@@ -1,13 +1,13 @@
-defmodule PrxClient do
+defmodule PrxAccess do
   @moduledoc """
-  Client library for interacting with PRX APIs
+  Client library for accessing PRX APIs
   """
 
-  alias PrxClient.Auth
-  alias PrxClient.Remote
-  alias PrxClient.Resource
-  alias PrxClient.Resource.Link
-  alias PrxClient.Error
+  alias PrxAccess.Auth
+  alias PrxAccess.Remote
+  alias PrxAccess.Resource
+  alias PrxAccess.Resource.Link
+  alias PrxAccess.Error
 
   @doc """
   Get any resource by url
@@ -45,7 +45,7 @@ defmodule PrxClient do
   def links({:ok, res}, rel), do: links(res, rel)
   def links(err, _rel), do: err
 
-  def link(res, "/" <> path), do: {:ok, %Link{href: "/#{path}"}}
+  def link(_res, "/" <> path), do: {:ok, %Link{href: "/#{path}"}}
 
   def link(res, rel) do
     case links(res, rel) do

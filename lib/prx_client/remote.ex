@@ -1,11 +1,11 @@
-defmodule PrxClient.Remote do
+defmodule PrxAccess.Remote do
   def get(url, token \\ nil) do
     case HTTPoison.get(url, headers(token)) do
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        PrxClient.Resource.build(status, url, token, body)
+        PrxAccess.Resource.build(status, url, token, body)
 
       {:error, %HTTPoison.Error{reason: reason}} ->
-        PrxClient.Error.build(nil, url, reason)
+        PrxAccess.Error.build(nil, url, reason)
     end
   end
 
@@ -22,7 +22,7 @@ defmodule PrxClient.Remote do
   end
 
   def user_agent do
-    "PrxClientElixir/#{Mix.Project.config()[:version]}"
+    "PrxAccessElixir/#{Mix.Project.config()[:version]}"
   end
 
   defp headers(nil) do

@@ -1,11 +1,11 @@
-defmodule PrxClient.Auth do
+defmodule PrxAccess.Auth do
   @default_id_host "id.prx.org"
   @token_url "/token"
 
   # use token POST body vs auth header for sending client id/secret
   @scheme "request_body"
 
-  alias PrxClient.Error
+  alias PrxAccess.Error
 
   # you already have a token (TODO: refreshing)
   def get_token(%{token: "" <> token}), do: {:ok, token}
@@ -29,7 +29,7 @@ defmodule PrxClient.Auth do
       strategy: OAuth2.Strategy.ClientCredentials,
       client_id: id,
       client_secret: secret,
-      site: PrxClient.Remote.host_to_url(host),
+      site: PrxAccess.Remote.host_to_url(host),
       token_url: @token_url
     )
   end
@@ -39,12 +39,12 @@ defmodule PrxClient.Auth do
   end
 
   defp new_client(_opts) do
-    Error.build(401, nil, "Missing PrxClient.Auth config: id, secret")
+    Error.build(401, nil, "Missing PrxAccess.Auth config: id, secret")
   end
 
   defp client_token(%OAuth2.Client{} = client, account) do
     params = [account: account, auth_scheme: @scheme]
-    headers = [{"User-Agent", PrxClient.Remote.user_agent()}]
+    headers = [{"User-Agent", PrxAccess.Remote.user_agent()}]
 
     case OAuth2.Client.get_token(client, params, headers) do
       {:ok, %OAuth2.Client{token: %{access_token: token}}} ->

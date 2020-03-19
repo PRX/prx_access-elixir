@@ -1,9 +1,9 @@
-defmodule PrxClient.ErrorTest do
+defmodule PrxAccess.ErrorTest do
   use ExUnit.Case, async: true
 
-  import PrxClient.Factory
+  import PrxAccess.Factory
 
-  alias PrxClient.Error
+  alias PrxAccess.Error
 
   test "has fields" do
     err = %Error{}

@@ -1,11 +1,11 @@
-defmodule PrxClient.Resource do
+defmodule PrxAccess.Resource do
   defstruct [:_status, :_url, :_token, :attributes, :_links, :_embedded]
 
   defmodule Link do
     defstruct [:href, :title, :profile, :count, templated: false]
 
     def from_json(json) do
-      %PrxClient.Resource.Link{
+      %PrxAccess.Resource.Link{
         href: json["href"],
         title: json["title"],
         profile: json["profile"],
@@ -20,14 +20,14 @@ defmodule PrxClient.Resource do
   def build(status, url, token, body) when status >= 200 and status < 300 do
     case Poison.decode(body) do
       {:ok, json} -> {:ok, from_json(status, url, token, json)}
-      _not_json -> PrxClient.Error.build(status, url, body)
+      _not_json -> PrxAccess.Error.build(status, url, body)
     end
   end
 
-  def build(status, url, _token, body), do: PrxClient.Error.build(status, url, body)
+  def build(status, url, _token, body), do: PrxAccess.Error.build(status, url, body)
 
   def from_json(status, url, token, json) do
-    %PrxClient.Resource{}
+    %PrxAccess.Resource{}
     |> Map.put(:_status, status)
     |> Map.put(:_url, url)
     |> Map.put(:_token, token)

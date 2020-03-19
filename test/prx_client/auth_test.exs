@@ -1,11 +1,11 @@
-defmodule PrxClient.AuthTest do
+defmodule PrxAccess.AuthTest do
   use ExUnit.Case, async: true
 
   import FakeServer
-  import PrxClient.Factory
+  import PrxAccess.Factory
 
-  alias PrxClient.Auth
-  alias PrxClient.Error
+  alias PrxAccess.Auth
+  alias PrxAccess.Error
 
   test "returns tokens if one already exists" do
     assert Auth.get_token(%{token: "1234"}) == {:ok, "1234"}
@@ -22,7 +22,7 @@ defmodule PrxClient.AuthTest do
     assert %Error{} = err
     assert err.status == 401
     assert err.url == nil
-    assert err.message == "Missing PrxClient.Auth config: id, secret"
+    assert err.message == "Missing PrxAccess.Auth config: id, secret"
   end
 
   test_with_server "gets an oauth token" do
@@ -51,7 +51,7 @@ end
 # end
 #
 # test "sets authorization headers" do
-#   expect(PrxClient.MockHTTPoison, :get, fn url, hdrs ->
+#   expect(PrxAccess.MockHTTPoison, :get, fn url, hdrs ->
 #     assert url == "http://some.where/api/v1"
 #     assert hdrs == [{"Accept", "application/hal+json"}, {"Authorization", "Bearer my-token"}]
 #     {:ok, %HTTPoison.Response{status_code: 200, body: "{}"}}
