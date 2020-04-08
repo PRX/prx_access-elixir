@@ -12,9 +12,9 @@ defmodule PrxAccess.AuthTest do
     assert Auth.get_token(%{token: "5678"}) == {:ok, "5678"}
   end
 
-  test "returns nil if you don't ask for an account" do
-    assert Auth.get_token(%{account: nil}) == {:ok, nil}
-    assert Auth.get_token(%{account: []}) == {:ok, nil}
+  test "returns nil if you don't ask for auth" do
+    assert Auth.get_token(%{id: nil}) == {:ok, nil}
+    assert Auth.get_token(%{auth: false}) == {:ok, nil}
   end
 
   test "requires a client id and secret" do
@@ -26,11 +26,27 @@ defmodule PrxAccess.AuthTest do
   end
 
   test_with_server "gets an oauth token" do
+    route("/token", build(:token_response, id: "id", secret: "secret"))
+
+    params = %{id: "id", secret: "secret", host: FakeServer.address()}
+    assert {:ok, token} = Auth.get_token(params)
+    assert token == "your-token/default-account/default-scope"
+  end
+
+  test_with_server "gets an oauth token for an account" do
     route("/token", build(:token_response, account: 1234, id: "id", secret: "secret"))
 
     params = %{account: "1234", id: "id", secret: "secret", host: FakeServer.address()}
     assert {:ok, token} = Auth.get_token(params)
-    assert token == "your-token-1234"
+    assert token == "your-token/1234/default-scope"
+  end
+
+  test_with_server "gets an oauth token with a non-default scope" do
+    route("/token", build(:token_response, account: "*", scope: "read", id: "id", secret: "sec"))
+
+    params = %{account: "*", scope: "read", id: "id", secret: "sec", host: FakeServer.address()}
+    assert {:ok, token} = Auth.get_token(params)
+    assert token == "your-token/*/read"
   end
 
   test_with_server "gets unauthorized errors" do
@@ -44,15 +60,3 @@ defmodule PrxAccess.AuthTest do
     assert err.message == "Invalid credentials"
   end
 end
-
-#
-#
-#   assert {:ok, _res} = Remote.get("http://some.where/api/v1")
-# end
-#
-# test "sets authorization headers" do
-#   expect(PrxAccess.MockHTTPoison, :get, fn url, hdrs ->
-#     assert url == "http://some.where/api/v1"
-#     assert hdrs == [{"Accept", "application/hal+json"}, {"Authorization", "Bearer my-token"}]
-#     {:ok, %HTTPoison.Response{status_code: 200, body: "{}"}}
-#   end)

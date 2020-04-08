@@ -51,7 +51,8 @@ for [id.prx.org](https://github.com/PRX/id.prx.org).
 
 ```elixir
 auth_options = [
-  account: 1234,
+  account: "optional account_id for restricted token",
+  scope: "optional scope for restricted token",
   id_host: "id.staging.prx.tech",
   client_id: "my-client-id",
   client_secret: "my-client-secret"

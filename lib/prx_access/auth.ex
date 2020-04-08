@@ -11,16 +11,16 @@ defmodule PrxAccess.Auth do
   def get_token(%{token: "" <> token}), do: {:ok, token}
 
   # you don't need a token
-  def get_token(%{account: nil}), do: {:ok, nil}
-  def get_token(%{account: []}), do: {:ok, nil}
+  def get_token(%{id: nil}), do: {:ok, nil}
+  def get_token(%{auth: false}), do: {:ok, nil}
 
   # translate a list of account-ids to a comma separated string
   def get_token(%{account: accounts} = opts) when is_list(accounts) do
     Map.put(opts, :account, Enum.join(accounts, ",")) |> get_token()
   end
 
-  def get_token(%{account: account} = opts) when is_integer(account) or is_binary(account) do
-    new_client(opts) |> client_token(account)
+  def get_token(opts) do
+    new_client(opts) |> client_token(opts[:account], opts[:scope])
   end
 
   defp new_client(%{id: "" <> id, secret: "" <> secret, host: "" <> host}) do
@@ -42,11 +42,8 @@ defmodule PrxAccess.Auth do
     Error.build(401, nil, "Missing PrxAccess.Auth config: id, secret")
   end
 
-  defp client_token(%OAuth2.Client{} = client, account) do
-    params = [account: account, auth_scheme: @scheme]
-    headers = [{"User-Agent", PrxAccess.Remote.user_agent()}]
-
-    case OAuth2.Client.get_token(client, params, headers) do
+  defp client_token(%OAuth2.Client{} = client, account, scope) do
+    case OAuth2.Client.get_token(client, oauth_params(account, scope), oauth_headers()) do
       {:ok, %OAuth2.Client{token: %{access_token: token}}} ->
         {:ok, token}
 
@@ -64,5 +61,12 @@ defmodule PrxAccess.Auth do
     end
   end
 
-  defp client_token(err, _account), do: err
+  defp client_token(err, _account, _scope), do: err
+
+  defp oauth_params(nil, nil), do: [auth_scheme: @scheme]
+  defp oauth_params(account, nil), do: [account: account, auth_scheme: @scheme]
+  defp oauth_params(nil, scope), do: [scope: scope, auth_scheme: @scheme]
+  defp oauth_params(account, scope), do: [account: account, scope: scope, auth_scheme: @scheme]
+
+  defp oauth_headers(), do: [{"User-Agent", PrxAccess.Remote.user_agent()}]
 end

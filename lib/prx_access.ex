@@ -17,12 +17,20 @@ defmodule PrxAccess do
 
     # for fetching an oauth token
     {account, opts} = Keyword.pop(opts, :account)
+    {scope, opts} = Keyword.pop(opts, :scope)
     {host, opts} = Keyword.pop(opts, :id_host)
     {id, opts} = Keyword.pop(opts, :client_id)
     {secret, _opts} = Keyword.pop(opts, :client_secret)
 
     # optionally get a token before making request
-    auth_opts = %{token: token, account: account, host: host, id: id, secret: secret}
+    auth_opts = %{
+      token: token,
+      account: account,
+      scope: scope,
+      host: host,
+      id: id,
+      secret: secret
+    }
 
     case Auth.get_token(auth_opts) do
       {:ok, token} -> Remote.get(url, token)

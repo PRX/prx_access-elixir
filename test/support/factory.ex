@@ -61,14 +61,15 @@ defmodule PrxAccess.Factory do
     }
   end
 
-  def token_response_factory(%{id: id, secret: secret, account: account} = attrs) do
+  def token_response_factory(%{id: id, secret: secret} = attrs) do
     expected_form =
       %{
         "grant_type" => "client_credentials",
         "client_id" => id,
-        "client_secret" => secret,
-        "account" => account
+        "client_secret" => secret
       }
+      |> form_optional_account(attrs[:account])
+      |> form_optional_scope(attrs[:scope])
       |> URI.encode_query()
 
     plain_headers = %{"content-type" => "text/plain"}
@@ -88,8 +89,15 @@ defmodule PrxAccess.Factory do
           Response.unauthorized("Invalid credentials", plain_headers)
 
         true ->
-          Response.ok(%{access_token: "your-token-#{account}", token_type: "bearer"})
+          account = Map.get(attrs, :account, "default-account")
+          scope = Map.get(attrs, :scope, "default-scope")
+          Response.ok(%{access_token: "your-token/#{account}/#{scope}", token_type: "bearer"})
       end
     end
   end
+
+  defp form_optional_account(form, nil), do: form
+  defp form_optional_account(form, account), do: Map.put(form, "account", account)
+  defp form_optional_scope(form, nil), do: form
+  defp form_optional_scope(form, scope), do: Map.put(form, "scope", scope)
 end
