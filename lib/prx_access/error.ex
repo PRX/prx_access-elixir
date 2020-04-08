@@ -35,6 +35,8 @@ defmodule PrxAccess.Error do
     {:error, err}
   end
 
+  defp build_text(status, url, ""), do: build_text(status, url, "Got #{status} for #{url}")
+
   defp build_text(status, url, text) do
     err = %PrxAccess.Error{
       status: status,
