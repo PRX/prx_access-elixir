@@ -32,8 +32,8 @@ defmodule PrxAccess.MixProject do
       {:httpoison, "~> 1.6"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:oauth2, "~> 2.0"},
-      {:poison, "~> 3.1"},
-      {:uri_template, "~> 1.0"}
+      {:poison, ">= 2.0.0"},
+      {:uri_template, ">= 1.0.0"}
     ]
   end
 
