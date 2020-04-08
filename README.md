@@ -13,7 +13,7 @@ Add the package to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:prx_access, "~> 0.1.0"}
+    {:prx_access, "~> 0.2.0"}
   ]
 end
 ```

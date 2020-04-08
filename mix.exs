@@ -4,8 +4,8 @@ defmodule PrxAccess.MixProject do
   def project do
     [
       app: :prx_access,
-      version: "0.1.0",
-      elixir: "~> 1.9",
+      version: "0.2.0",
+      elixir: "~> 1.6",
       name: "PrxAccess",
       source_url: "https://github.com/PRX/prx_access-elixir",
       homepage_url: "https://github.com/PRX/prx_access-elixir",
