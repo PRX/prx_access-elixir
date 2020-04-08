@@ -14,6 +14,22 @@ defmodule PrxAccess.ResourceTest do
     assert res._embedded == nil
   end
 
+  test "has access" do
+    res = %Resource{
+      attributes: %{"foo" => "bar"},
+      _links: %{"prx:link" => %Resource.Link{href: "/the/href"}},
+      _embedded: %{"prx:embed" => %{}}
+    }
+
+    assert res["foo"] == "bar"
+    assert res["_links"] == res._links
+    assert res[:_links] == res._links
+    assert res["_embedded"] == res._embedded
+    assert res[:_embedded] == res._embedded
+    assert res["_links"]["prx:link"]["href"] == "/the/href"
+    assert res["_links"]["prx:link"][:href] == "/the/href"
+  end
+
   test "builds from json" do
     {:ok, res} = Resource.build(200, "http://some.where", "{\"foo\":\"bar\"}")
     assert %Resource{} = res

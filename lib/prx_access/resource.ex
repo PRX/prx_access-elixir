@@ -1,8 +1,23 @@
 defmodule PrxAccess.Resource do
+  @behaviour Access
+  @resource_keys [:_status, :_url, :_token, :attributes, :_links, :_embedded]
   defstruct [:_status, :_url, :_token, :attributes, :_links, :_embedded]
 
   defmodule Link do
+    @behaviour Access
+    @link_aliases %{
+      "href" => :href,
+      "title" => :title,
+      "profile" => :profile,
+      "count" => :count,
+      "templated" => :templated
+    }
     defstruct [:href, :title, :profile, :count, templated: false]
+
+    def link_alias(key), do: Map.get(@link_aliases, key, key)
+    def fetch(link, key), do: Map.fetch(link, link_alias(key))
+    def get_and_update(link, key, func), do: Map.get_and_update(link, link_alias(key), func)
+    def pop(link, key), do: Map.pop(link, link_alias(key))
 
     def from_json(json) do
       %PrxAccess.Resource.Link{
@@ -14,6 +29,20 @@ defmodule PrxAccess.Resource do
       }
     end
   end
+
+  def fetch(res, key) do
+    cond do
+      Enum.member?(@resource_keys, key) -> Map.fetch(res, key)
+      key == "_links" -> Map.fetch(res, :_links)
+      key == "_embedded" -> Map.fetch(res, :_embedded)
+      true -> Map.fetch(res.attributes || %{}, key)
+    end
+  end
+
+  def get_and_update(res, key, func),
+    do: Map.put(res, :attributes, Map.get_and_update(res.attributes || %{}, key, func))
+
+  def pop(res, key), do: Map.put(res, :attributes, Map.pop(res.attributes || %{}, key))
 
   def build(status, url, body), do: build(status, url, nil, body)
 
